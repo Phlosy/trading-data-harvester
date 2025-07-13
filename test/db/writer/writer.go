@@ -17,7 +17,7 @@ func main() {
 	}
 	defer db.Close()
 
-	limit := 5
+	limit := 10
 	query := datamodel.ApiCandlesQuery{
 		Symbol:   "BTCUSDT",
 		Interval: "1m",

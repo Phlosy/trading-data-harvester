@@ -7,10 +7,10 @@ import (
 )
 
 func main() {
-	limit := 5
+	limit := 1
 	query := datamodel.ApiCandlesQuery{
 		Symbol:   "BTCUSDT",
-		Interval: "1m",
+		Interval: "3d",
 		Limit:    &limit,
 	}
 

@@ -3,29 +3,26 @@ package binance
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"trading-data-harvester/pkg/datamodel"
 )
 
+// GetCandlestickData 获取K线数据
 func GetCandlestickData(query datamodel.ApiCandlesQuery) ([]datamodel.ApiCandlesResponse, error) {
 	url := fmt.Sprintf("%s%s?%s", BaseURL, GetCandlestickDataPath, BuildQuery(query))
 
-	response, err := http.Get(url)
-	if err != nil {
-		return nil, err
+	headers := map[string]string{
+		"User-Agent": "Go-binance-client",
+		"Connection": "keep-alive",
 	}
-	defer response.Body.Close()
 
-	body, err := io.ReadAll(response.Body)
+	body, err := DoGet(url, headers)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("请求 Binance 接口失败: %w", err)
 	}
 
 	var rawCandles [][]interface{}
-	err = json.Unmarshal(body, &rawCandles)
-	if err != nil {
-		return nil, err
+	if err := json.Unmarshal(body, &rawCandles); err != nil {
+		return nil, fmt.Errorf("JSON 解析失败: %w, body: %s", err, string(body))
 	}
 
 	var candles []datamodel.ApiCandlesResponse
