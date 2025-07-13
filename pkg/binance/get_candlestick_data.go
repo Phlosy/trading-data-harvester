@@ -28,13 +28,13 @@ func GetCandlestickData(query datamodel.ApiCandlesQuery) ([]datamodel.ApiCandles
 	var candles []datamodel.ApiCandlesResponse
 	for _, rawCandle := range rawCandles {
 		candle := datamodel.ApiCandlesResponse{
-			OpenTime:                 int64(rawCandle[0].(float64)),
+			OpenTime:                 uint64(rawCandle[0].(float64)),
 			Open:                     rawCandle[1].(string),
 			High:                     rawCandle[2].(string),
 			Low:                      rawCandle[3].(string),
 			Close:                    rawCandle[4].(string),
 			Volume:                   rawCandle[5].(string),
-			CloseTime:                int64(rawCandle[6].(float64)),
+			CloseTime:                uint64(rawCandle[6].(float64)),
 			QuoteAssetVolume:         rawCandle[7].(string),
 			NumberOfTrades:           int64(rawCandle[8].(float64)),
 			TakerBuyBaseAssetVolume:  rawCandle[9].(string),
