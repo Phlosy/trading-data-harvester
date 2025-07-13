@@ -6,8 +6,8 @@ type CandleDBModel struct {
 	Exchange       string    // 交易所名称（如 binance）
 	Symbol         string    // 币对（如 BTC/USDT）
 	Interval       string    // K线周期（如 1m, 5m）
-	OpenTime       time.Time // 开始时间，使用 Unix 时间戳
-	EndTime        time.Time // 结束时间，使用 Unix 时间戳
+	OpenTime       uint64    // 开始时间，使用 Unix 时间戳
+	EndTime        uint64    // 结束时间，使用 Unix 时间戳
 	Open           float64   // 开盘价
 	High           float64   // 最高价
 	Low            float64   // 最低价
@@ -17,4 +17,5 @@ type CandleDBModel struct {
 	Trades         uint64    // 成交笔数
 	BuyVolume      float64   // 主动买入量
 	BuyQuoteVolume float64   // 主动买入额
+	TimeStamp      time.Time // 时间戳
 }

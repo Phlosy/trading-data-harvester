@@ -13,8 +13,8 @@ func WriteCandles(db *sql.DB, candles []datamodel.CandleDBModel) error {
 	defer tx.Rollback()
 
 	stmt, err := tx.Prepare(
-		"INSERT INTO candles (exchange, symbol, interval, open_time, end_time, open, high, low, close, volume, quote_volume, trades, buy_volume, buy_quote_volume) " +
-			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO candles (exchange, symbol, interval, open_time, end_time, open, high, low, close, volume, quote_volume, trades, buy_volume, buy_quote_volume, timestamp) " +
+			"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 	)
 	if err != nil {
 		return err
@@ -26,6 +26,7 @@ func WriteCandles(db *sql.DB, candles []datamodel.CandleDBModel) error {
 			candle.Exchange, candle.Symbol, candle.Interval, candle.OpenTime, candle.EndTime,
 			candle.Open, candle.High, candle.Low, candle.Close, candle.Volume,
 			candle.QuoteVolume, candle.Trades, candle.BuyVolume, candle.BuyQuoteVolume,
+			candle.TimeStamp,
 		)
 		if err != nil {
 			return err

@@ -12,8 +12,8 @@ func CandlesBody2DB(exchange string, query datamodel.ApiCandlesQuery, candles []
 			Exchange:       exchange,
 			Symbol:         query.Symbol,
 			Interval:       query.Interval,
-			OpenTime:       utils.Unix2Time(candle.OpenTime),
-			EndTime:        utils.Unix2Time(candle.CloseTime),
+			OpenTime:       candle.OpenTime,
+			EndTime:        candle.CloseTime,
 			Open:           utils.StringToFloat64(candle.Open),
 			High:           utils.StringToFloat64(candle.High),
 			Low:            utils.StringToFloat64(candle.Low),
@@ -23,6 +23,7 @@ func CandlesBody2DB(exchange string, query datamodel.ApiCandlesQuery, candles []
 			Trades:         uint64(candle.NumberOfTrades),
 			BuyVolume:      utils.StringToFloat64(candle.TakerBuyBaseAssetVolume),
 			BuyQuoteVolume: utils.StringToFloat64(candle.TakerBuyQuoteAssetVolume),
+			TimeStamp:      utils.Unix2Time(int64(candle.OpenTime)),
 		}
 	}
 	return dbCandles
