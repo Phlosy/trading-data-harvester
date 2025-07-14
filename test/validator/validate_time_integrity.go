@@ -15,8 +15,9 @@ func main() {
 	}
 	defer db.Close()
 
-	intervalMs := int64(60 * 1000) // 1分钟
-	gaps, err := validator.ValidateTimeIntegrity(db, "kline_db", "btcusdt_1m", intervalMs)
+	intervalMs := "1m" // 1分钟
+	gaps, err := validator.ValidateTimeIntegrity(db, "crypto", "candles", intervalMs, "BTCUSDT")
+
 	if err != nil {
 		log.Fatalf("校验失败: %v", err)
 	}
@@ -25,7 +26,7 @@ func main() {
 	} else {
 		fmt.Println("检测到缺失时间段：")
 		for _, gap := range gaps {
-			fmt.Printf("缺失 %s ~ %s\n", time.UnixMilli(gap.MissingFrom), time.UnixMilli(gap.MissingTo))
+			fmt.Printf("缺失 %s ~ %s\n", time.UnixMilli(int64(gap.MissingFrom)), time.UnixMilli(int64(gap.MissingTo)))
 		}
 	}
 

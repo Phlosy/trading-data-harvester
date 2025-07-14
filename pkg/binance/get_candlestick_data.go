@@ -8,7 +8,7 @@ import (
 
 // GetCandlestickData 获取K线数据
 func GetCandlestickData(query datamodel.ApiCandlesQuery) ([]datamodel.ApiCandlesResponse, error) {
-	url := fmt.Sprintf("%s%s?%s", BaseURL, GetCandlestickDataPath, BuildQuery(query))
+	url := fmt.Sprintf("%s%s?%s", BaseURL, GetCandlestickDataPath, buildQuery(query))
 
 	headers := map[string]string{
 		"User-Agent": "Go-binance-client",
@@ -47,7 +47,7 @@ func GetCandlestickData(query datamodel.ApiCandlesQuery) ([]datamodel.ApiCandles
 	return candles, nil
 }
 
-func BuildQuery(query datamodel.ApiCandlesQuery) string {
+func buildQuery(query datamodel.ApiCandlesQuery) string {
 	queryString := fmt.Sprintf("symbol=%s&interval=%s", query.Symbol, query.Interval)
 	if query.Limit != nil {
 		queryString += fmt.Sprintf("&limit=%d", *query.Limit)

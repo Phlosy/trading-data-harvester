@@ -4,67 +4,87 @@ import (
 	"database/sql"
 	"fmt"
 	"trading-data-harvester/pkg/datamodel"
+	utils "trading-data-harvester/utils/convert"
 )
 
 // ValidateTimeIntegrity 验证时间完整性，验证以往数据是否存在时间缺口
-func ValidateTimeIntegrity(db *sql.DB, databaseName string, tableName string, intervalMs int64) ([]datamodel.ValidatorTimeGap, error) {
+func ValidateTimeIntegrity(db *sql.DB, databaseName string, tableName string, intervalMs string, symbol string) ([]datamodel.ValidatorTimeGap, error) {
 
 	var gaps []datamodel.ValidatorTimeGap
-	var lastOpenTime int64 = -1 // 初始化为-1，表示尚未读取任何 open_time
+
+	// 间隔时间转换为毫秒
+	intervalMsInt := utils.Interval2Ms(intervalMs)
+
+	// 获取最早的时间
+	var earliestOpenTime uint64
+	query := fmt.Sprintf("SELECT MIN(open_time) FROM %s.%s WHERE symbol = '%s' AND interval = '%s'", databaseName, tableName, symbol, intervalMs)
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err = rows.Scan(&earliestOpenTime)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	for {
-		// 构造查询SQL，使用 lastOpenTime 作为起始点分页
-		var query string
-		if lastOpenTime == -1 {
-			// 初始查询，获取最早的 open_time
-			query = fmt.Sprintf("SELECT open_time FROM %s.%s ORDER BY open_time ASC LIMIT %d", databaseName, tableName, pageSize)
-		} else {
-			// 后续查询，获取比 lastOpenTime 更晚的 open_time
-			query = fmt.Sprintf("SELECT open_time FROM %s.%s WHERE open_time > %d ORDER BY open_time ASC LIMIT %d", databaseName, tableName, lastOpenTime, pageSize)
-		}
-
-		// 执行查询
+		query := buildQuery(databaseName, tableName, symbol, intervalMs, earliestOpenTime, pageSize)
 		rows, err := db.Query(query)
 		if err != nil {
-			return nil, fmt.Errorf("查询 open_time 失败: %w", err)
+			return nil, err
 		}
+		defer rows.Close()
 
-		var openTimes []int64
+		var openTimes []uint64
 		for rows.Next() {
-			var openTime int64
+			var openTime uint64
 			if err := rows.Scan(&openTime); err != nil {
 				rows.Close()
 				return nil, fmt.Errorf("读取 open_time 失败: %w", err)
 			}
-			openTimes = append(openTimes, openTime) // 收集查询到的 open_time
+			openTimes = append(openTimes, openTime)
 		}
 		rows.Close()
 
-		// 数据读取完毕，退出循环
+		// 数据读取完毕，退出
 		if len(openTimes) == 0 {
 			break
 		}
 
-		// 校验时间差，寻找缺口
+		expected := earliestOpenTime
+		// 校验时间差
 		for _, t := range openTimes {
-			if lastOpenTime != -1 {
-				expected := lastOpenTime + intervalMs // 计算期望的下一个 open_time
+			for expected <= t {
 				if t != expected {
-					// 缺口出现，记录缺口信息
 					gaps = append(gaps, datamodel.ValidatorTimeGap{
+						Symbol:      symbol,
+						Interval:    intervalMs,
 						MissingFrom: expected,
-						MissingTo:   t - intervalMs,
+						MissingTo:   expected + uint64(intervalMsInt),
 					})
 				}
+				expected += uint64(intervalMsInt)
 			}
-			lastOpenTime = t // 更新 lastOpenTime 为当前的 open_time
 		}
 
-		// 如果本批次数据不足一页，说明已到达数据末尾，退出循环
-		if len(openTimes) < pageSize {
-			break
-		}
+		// 每次循环后，earliestOpenTime 增加 interval*pageSize，防止死循环
+		earliestOpenTime = expected + uint64(intervalMsInt)
+
+		// 如果本批不足一页，也退出
+		// if len(openTimes) < pageSize {
+		// 	break
+		// }
 	}
 
 	return gaps, nil // 返回所有找到的时间缺口
+}
+
+// 构造查询语句
+func buildQuery(databaseName string, tableName string, symbol string, intervalMs string, earliestOpenTime uint64, pageSize int) string {
+	query := fmt.Sprintf("SELECT open_time FROM %s.%s WHERE symbol = '%s' AND interval = '%s' AND open_time >= %d ORDER BY open_time ASC LIMIT %d", databaseName, tableName, symbol, intervalMs, earliestOpenTime, pageSize)
+	return query
 }
