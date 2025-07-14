@@ -3,21 +3,24 @@ package validator
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 	"trading-data-harvester/pkg/datamodel"
 	utils "trading-data-harvester/utils/convert"
 )
 
 // ValidateTimeIntegrity 验证时间完整性，验证以往数据是否存在时间缺口
-func ValidateTimeIntegrity(db *sql.DB, databaseName string, tableName string, intervalMs string, symbol string) ([]datamodel.ValidatorTimeGap, error) {
+func ValidateTimeIntegrity(db *sql.DB, databaseName string, tableName string, exchange string, intervalMs string, symbol string) (*[]datamodel.ValidatorTimeGap, error) {
 
-	var gaps []datamodel.ValidatorTimeGap
+	var gaps *[]datamodel.ValidatorTimeGap = &[]datamodel.ValidatorTimeGap{}
+
+	pageSize, _ := strconv.Atoi(pageSizeStr)
 
 	// 间隔时间转换为毫秒
 	intervalMsInt := utils.Interval2Ms(intervalMs)
 
 	// 获取最早的时间
 	var earliestOpenTime uint64
-	query := fmt.Sprintf("SELECT MIN(open_time) FROM %s.%s WHERE symbol = '%s' AND interval = '%s'", databaseName, tableName, symbol, intervalMs)
+	query := fmt.Sprintf("SELECT MIN(open_time) FROM %s.%s WHERE exchange = '%s' AND symbol = '%s' AND interval = '%s'", databaseName, tableName, exchange, symbol, intervalMs)
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
@@ -32,7 +35,7 @@ func ValidateTimeIntegrity(db *sql.DB, databaseName string, tableName string, in
 	}
 
 	for {
-		query := buildQuery(databaseName, tableName, symbol, intervalMs, earliestOpenTime, pageSize)
+		query := buildQuery(databaseName, tableName, exchange, symbol, intervalMs, earliestOpenTime, pageSize)
 		rows, err := db.Query(query)
 		if err != nil {
 			return nil, err
@@ -56,16 +59,27 @@ func ValidateTimeIntegrity(db *sql.DB, databaseName string, tableName string, in
 		}
 
 		expected := earliestOpenTime
+		conFlag := 0
+		tempGap := datamodel.ValidatorTimeGap{}
 		// 校验时间差
 		for _, t := range openTimes {
 			for expected <= t {
 				if t != expected {
-					gaps = append(gaps, datamodel.ValidatorTimeGap{
-						Symbol:      symbol,
-						Interval:    intervalMs,
-						MissingFrom: expected,
-						MissingTo:   expected + uint64(intervalMsInt),
-					})
+					if conFlag == 0 {
+						tempGap.Exchange = exchange
+						tempGap.Symbol = symbol
+						tempGap.Interval = intervalMs
+						tempGap.MissingFrom = expected
+						tempGap.MissingTo = expected + uint64(intervalMsInt)
+					} else {
+						tempGap.MissingTo = expected + uint64(intervalMsInt)
+					}
+					conFlag++
+				} else {
+					if conFlag != 0 {
+						*gaps = append(*gaps, tempGap)
+					}
+					conFlag = 0 // 重置
 				}
 				expected += uint64(intervalMsInt)
 			}
@@ -84,7 +98,7 @@ func ValidateTimeIntegrity(db *sql.DB, databaseName string, tableName string, in
 }
 
 // 构造查询语句
-func buildQuery(databaseName string, tableName string, symbol string, intervalMs string, earliestOpenTime uint64, pageSize int) string {
-	query := fmt.Sprintf("SELECT open_time FROM %s.%s WHERE symbol = '%s' AND interval = '%s' AND open_time >= %d ORDER BY open_time ASC LIMIT %d", databaseName, tableName, symbol, intervalMs, earliestOpenTime, pageSize)
+func buildQuery(databaseName string, tableName string, exchange string, symbol string, intervalMs string, earliestOpenTime uint64, pageSize int) string {
+	query := fmt.Sprintf("SELECT open_time FROM %s.%s WHERE exchange = '%s' AND symbol = '%s' AND interval = '%s' AND open_time >= %d ORDER BY open_time ASC LIMIT %d", databaseName, tableName, exchange, symbol, intervalMs, earliestOpenTime, pageSize)
 	return query
 }

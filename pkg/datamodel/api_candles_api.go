@@ -1,11 +1,11 @@
 package datamodel
 
 type ApiCandlesQuery struct {
-	Symbol    string `json:"symbol"`    // 币对
-	Interval  string `json:"interval"`  // 时间间隔
-	StartTime *int64 `json:"startTime"` // 开始时间
-	EndTime   *int64 `json:"endTime"`   // 结束时间
-	Limit     *int   `json:"limit"`     // 返回结果限制数量
+	Symbol    string  `json:"symbol"`    // 币对
+	Interval  string  `json:"interval"`  // 时间间隔
+	StartTime *uint64 `json:"startTime"` // 开始时间
+	EndTime   *uint64 `json:"endTime"`   // 结束时间
+	Limit     *int    `json:"limit"`     // 返回结果限制数量
 }
 
 type ApiCandlesResponse struct {

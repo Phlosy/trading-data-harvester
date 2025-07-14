@@ -1,5 +1,9 @@
 package validator
 
+import (
+	utils "trading-data-harvester/utils/env"
+)
+
 var (
-	pageSize = 2 // 每次最多查询10w行，视内存可调
+	pageSizeStr = utils.GetEnvOrDefault("PAGE_SIZE", "10000")
 )
