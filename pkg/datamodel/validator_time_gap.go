@@ -1,6 +1,8 @@
 package datamodel
 
 type ValidatorTimeGap struct {
-	MissingFrom int64
-	MissingTo   int64
+	Symbol      string
+	Interval    string
+	MissingFrom uint64
+	MissingTo   uint64
 }
