@@ -38,9 +38,9 @@ func FetchAllCandles(exchange string, symbol string, db *sql.DB) error {
 		startTime := nowTime.UnixMilli() - intervalMs
 		endTime := nowTime.UnixMilli() - intervalMs
 		// TODO: 删除
-		fmt.Println("nowTime:", nowTime.UnixMilli())
-		fmt.Println("startTime:", startTime)
-		fmt.Println("endTime:", endTime)
+		// fmt.Println("nowTime:", nowTime.UnixMilli())
+		// fmt.Println("startTime:", startTime)
+		// fmt.Println("endTime:", endTime)
 
 		for {
 			// 计算startTime，往前移动limit * intervalMs的时间
@@ -54,8 +54,10 @@ func FetchAllCandles(exchange string, symbol string, db *sql.DB) error {
 				endTime = 0
 			}
 
-			query.StartTime = &startTime
-			query.EndTime = &endTime
+			startTimeUint64 := uint64(startTime)
+			endTimeUint64 := uint64(endTime)
+			query.StartTime = &startTimeUint64
+			query.EndTime = &endTimeUint64
 
 			// TODO: 删除
 			tempStartTime := time.UnixMilli(startTime).Format("2006-01-02 15:04:05")
